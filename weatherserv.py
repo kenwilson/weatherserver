@@ -2,6 +2,7 @@ import sqlalchemy
 from datetime import date, datetime
 from flask import Flask
 from flask_restful import Resource, Api, reqparse, abort
+import time
 
 app = Flask(__name__)
 api = Api(app)
@@ -26,7 +27,7 @@ agent_parser.add_argument('mac_addr',
 
 # Static readings table - fields are
 READINGS = {
-    '0' : {
+    0 : {
     'weatherstation-id' : 'WSTATION-0',
     'reading_type' : 'temp',
     'reading_value' : 23.5,
@@ -61,6 +62,17 @@ class WeatherReading(Resource):
 class WeatherReadingList(Resource):
     def get(self):
         return READINGS
+
+    def post(self):
+        args = reading_parser.parse_args()
+        # Generate a key for this reading_id
+        reading_id = int(max(READINGS.keys())) + 1
+        READINGS[reading_id] = args
+        # Fill in the timestamp if the weatherstation didn't
+        if args['timestamp'] is None:
+            args['timestamp'] = int(time.time())
+
+        return READINGS[reading_id], 201
 
 api.add_resource(WeatherReading, '/readings/<reading_id>')
 api.add_resource(WeatherReadingList, '/readings')
